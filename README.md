@@ -147,12 +147,12 @@ Start here:
 Run the release helper from a clean `master` checkout:
 
 ```sh
-bin/release 0.2.9
+bin/release 1.0.1
 ```
 
-It updates `lib/kamal_backup/version.rb`, syncs `Gemfile.lock`, commits `Release 0.2.9`, and pushes `master`. CI runs the test suite and docs build, publishes the RubyGem and Docker image tags, then creates `v0.2.9`, the GitHub release, and the docs deployment from the release commit.
+It updates `lib/kamal_backup/version.rb`, syncs `Gemfile.lock`, commits the release, and pushes `master`. CI runs the test suite and docs build, publishes the RubyGem and Docker image tags, then creates the version tag, GitHub release, and docs deployment from the release commit.
 
-Use `bin/release 0.2.9 --no-push` to prepare the commit locally without publishing.
+Add `--no-push` to prepare the release commit locally without publishing.
 
 ## License
 
