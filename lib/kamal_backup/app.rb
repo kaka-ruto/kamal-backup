@@ -127,7 +127,7 @@ module KamalBackup
 
     def schedule
       config.validate_backup
-      Scheduler.new(config) { backup(force: true) }.run
+      Scheduler.new(config) { backup }.run
     end
 
     private

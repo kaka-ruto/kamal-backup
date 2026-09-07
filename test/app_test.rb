@@ -208,6 +208,57 @@ class AppTest < Minitest::Test
     end
   end
 
+  def test_schedule_skips_when_last_backup_is_still_fresh
+    Dir.mktmpdir do |dir|
+      db = File.join(dir, 'app.sqlite3')
+      files = File.join(dir, 'storage')
+      state = File.join(dir, 'state')
+      File.write(db, '')
+      FileUtils.mkdir_p(files)
+      FileUtils.mkdir_p(state)
+      File.write(
+        File.join(state, 'last_backup.json'),
+        JSON.pretty_generate(
+          status: 'ok',
+          finished_at: Time.now.utc.iso8601
+        )
+      )
+      restic = FakeRestic.new
+      database = FakeDatabase.new
+
+      app = KamalBackup::App.new(
+        env: base_env(
+          'DATABASE_ADAPTER' => 'sqlite',
+          'SQLITE_DATABASE_PATH' => db,
+          'BACKUP_PATHS' => files,
+          'KAMAL_BACKUP_STATE_DIR' => state,
+          'BACKUP_SCHEDULE_SECONDS' => '86400'
+        ),
+        restic: restic,
+        database: database
+      )
+
+      # The scheduled block must respect the due state — a restart right
+      # after a fresh backup must not trigger another full backup.
+      block = nil
+      fake_scheduler = Struct.new(:block) do
+        def run = nil
+      end.new(nil)
+      KamalBackup::Scheduler.stub(:new, ->(_config, &b) { block = b; fake_scheduler }) do
+        app.schedule
+      end
+      assert block, 'schedule must pass a backup block to the scheduler'
+
+      result = block.call
+
+      assert_equal 'skipped', result.fetch(:status)
+      assert_equal 'not_due', result.fetch(:reason)
+      assert_equal 0, restic.ensure_repository_calls
+      assert_equal 0, database.backup_calls.size
+      assert_equal 0, restic.backup_path_calls.size
+    end
+  end
+
   def test_backup_skips_when_disabled
     Dir.mktmpdir do |dir|
       db = File.join(dir, 'app.sqlite3')
