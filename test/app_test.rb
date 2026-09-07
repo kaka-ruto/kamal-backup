@@ -244,7 +244,10 @@ class AppTest < Minitest::Test
       fake_scheduler = Struct.new(:block) do
         def run = nil
       end.new(nil)
-      KamalBackup::Scheduler.stub(:new, ->(_config, &b) { block = b; fake_scheduler }) do
+      KamalBackup::Scheduler.stub(:new, ->(_config, &b) {
+        block = b
+        fake_scheduler
+      }) do
         app.schedule
       end
       assert block, 'schedule must pass a backup block to the scheduler'
