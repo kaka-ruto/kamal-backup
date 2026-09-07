@@ -244,7 +244,7 @@ class AppTest < Minitest::Test
       fake_scheduler = Struct.new(:block) do
         def run = nil
       end.new(nil)
-      KamalBackup::Scheduler.stub(:new, ->(_config, &b) {
+      KamalBackup::Scheduler.stub(:new, lambda { |_config, &b|
         block = b
         fake_scheduler
       }) do
